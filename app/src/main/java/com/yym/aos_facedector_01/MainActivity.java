@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.media.Image;
@@ -35,9 +36,11 @@ import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
+import com.google.mlkit.vision.face.FaceLandmark;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +53,8 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.View;
+
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -65,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // 세로 모드로 고정
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         previewView = findViewById(R.id.previewView);
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -107,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
                 // ImageAnalysis 설정
                 ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+//                        .setTargetResolution(new Size(640, 480))
                         .build();
 
                 imageAnalysis.setAnalyzer(cameraExecutor, new ImageAnalysis.Analyzer() {
@@ -135,6 +141,9 @@ public class MainActivity extends AppCompatActivity {
         InputImage inputImage = InputImage.fromMediaImage(imageProxy.getImage(), imageProxy.getImageInfo().getRotationDegrees());
         faceDetector.process(inputImage)
                 .addOnSuccessListener(faces -> {
+
+                    //Log.d("check:::::", "faces:::::" + String.valueOf(faces));
+
                     for (Face face : faces) {
                         drawRectangleOnFace(face, imageProxy);
                     }
@@ -146,55 +155,83 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void drawRectangleOnFace(Face face, ImageProxy imageProxy) {
-        // 얼굴의 좌표 가져오기
-        Rect boundingBox = face.getBoundingBox();
-
-        // Rect를 RectF로 변환
-        RectF boundingBoxF = new RectF(boundingBox);
-
-        int viewWidth = previewView.getWidth();
-        int viewHeight = previewView.getHeight();
 
         // 이미지 프록시의 크기 가져오기
         int imageWidth = imageProxy.getWidth();
         int imageHeight = imageProxy.getHeight();
 
-
-//        // 이미지 회전 각도에 따라 좌표 조정
-//        if (rotationDegrees == 90 || rotationDegrees == 270) {
-//            // 이미지가 90도 또는 270도 회전된 경우 좌표를 좌우 반전
-//            boundingBoxF.left = viewWidth - boundingBoxF.left;
-//            boundingBoxF.right = viewWidth - boundingBoxF.right;
-//
-//            // 좌우를 반전한 후 좌표를 교환
-//            float temp = boundingBoxF.left;
-//            boundingBoxF.left = boundingBoxF.right;
-//            boundingBoxF.right = temp;
-//        }
+        //  영상 출력 뷰 의 화면 크기 가져오기
+        int viewWidth = previewView.getWidth();
+        int viewHeight = previewView.getHeight();
 
 
         // 실제 이미지 크기와 이미지뷰 크기를 비교하여 비율 계산
         float scaleX = viewWidth / (float) imageWidth;
         float scaleY = viewHeight / (float) imageHeight;
 
-        scaleX *= 1.5;
-        scaleY *= 0.8;
+        // 얼굴의 좌표 가져오기
+        Rect boundingBox = face.getBoundingBox();
 
-        // 비율을 곱하여 이미지뷰 상의 좌표로 변환
-        boundingBoxF.left *= scaleX;
-        boundingBoxF.top *= scaleY;
-        boundingBoxF.right *= scaleX;
-        boundingBoxF.bottom *= scaleY;
+        // Rect를 RectF로 변환
+        RectF boundingBoxF = new RectF(boundingBox);
 
         // 이미지 회전 각도 가져오기
         int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
 
+        // 이미지 회전 각도에 따라 좌표 조정
+        if (rotationDegrees == 90 || rotationDegrees == 270) {
+
+            scaleX *= 1.4;
+            scaleY *= 1;
+
+            // 비율을 곱하여 이미지뷰 상의 좌표로 변환
+            boundingBoxF.left *= scaleX;
+            boundingBoxF.top *= (scaleY - 1 );
+            boundingBoxF.right *= scaleX;
+            boundingBoxF.bottom *= ( scaleY - 0.7 );
+
+            // 이미지가 90도 또는 270도 회전된 경우 좌표를 좌우 반전
+            boundingBoxF.left = viewWidth - boundingBoxF.left;
+            boundingBoxF.right = viewWidth - boundingBoxF.right;
+
+            // 좌우를 반전한 후 좌표를 교환
+            float temp = boundingBoxF.left;
+            boundingBoxF.left = boundingBoxF.right;
+            boundingBoxF.right = temp;
+        }// end if
+
+
+        // 이미지 회전 각도에 따라 좌표 조정
+        if (rotationDegrees == 0 || rotationDegrees == 180) {
+
+            scaleX *= 1;
+            scaleY *= 1.2;
+
+            // 비율을 곱하여 이미지뷰 상의 좌표로 변환
+            boundingBoxF.left *= scaleX;
+            boundingBoxF.top *= (scaleY - 1 );
+            boundingBoxF.right *= scaleX;
+            boundingBoxF.bottom *= ( scaleY - 0.2 );
+
+            // 이미지가 90도 또는 270도 회전된 경우 좌표를 좌우 반전
+            boundingBoxF.left = viewWidth - boundingBoxF.left;
+            boundingBoxF.right = viewWidth - boundingBoxF.right;
+
+            // 좌우를 반전한 후 좌표를 교환
+            float temp = boundingBoxF.left;
+            boundingBoxF.left = boundingBoxF.right;
+            boundingBoxF.right = temp;
+
+        }// end if
+
+
+
+
+
         Log.d("check:::::", "previewView.getWidth():::::" + String.valueOf(viewWidth));
         Log.d("check:::::", "previewView.getHeight():::::" + String.valueOf(viewHeight));
-
         Log.d("check:::::", "imageProxy.getWidth():::::" + String.valueOf(imageWidth));
         Log.d("check:::::", "imageProxy.getHeight():::::" + String.valueOf(imageHeight));
-
         Log.d("check:::::", "scaleX:::::" + String.valueOf(scaleX));
         Log.d("check:::::", "scaleY:::::" + String.valueOf(scaleY));
 
@@ -216,10 +253,64 @@ public class MainActivity extends AppCompatActivity {
         Canvas canvas = new Canvas(bitmap);
         canvas.drawRoundRect(boundingBoxF, 16, 16, paint);
 
+
+        // 랜드마크 정보 가져오기
+        List<FaceLandmark> landmarks = face.getAllLandmarks();
+
+
+        // 랜드마크에 점 그리기
+        for (FaceLandmark landmark : landmarks) {
+            drawPointOnLandmark(landmark.getPosition(), imageProxy, canvas, scaleX, scaleY);
+        }
+
         // 이미지뷰에 Bitmap 설정하여 화면에 출력
         ImageView imageView = findViewById(R.id.imageView);
         runOnUiThread(() -> imageView.setImageBitmap(bitmap));
+
     }
+
+
+    // 랜드마크 좌표에 점을 그리는 메서드 추가
+    private void drawPointOnLandmark(PointF landmarkPosition, ImageProxy imageProxy, Canvas canvas, float scaleX, float scaleY) {
+        // 좌표 변환
+        float viewWidth = previewView.getWidth();
+        float viewHeight = previewView.getHeight();
+
+        // 비율을 곱하여 이미지뷰 상의 좌표로 변환
+        float landmarkX = 0.0F;
+        float landmarkY = 0.0F;
+
+        // 이미지 회전 각도 가져오기
+        int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
+
+        // 이미지 회전 각도에 따라 좌표 조정
+        if (rotationDegrees == 90 || rotationDegrees == 270) {
+            landmarkX = landmarkPosition.x * scaleX;
+            landmarkY = (float) (landmarkPosition.y * ( scaleY - 0.6 ));
+
+            landmarkX = viewWidth - landmarkX;
+        }
+
+        if (rotationDegrees == 0 || rotationDegrees == 180) {
+            landmarkX = landmarkPosition.x * scaleX;
+            landmarkY = (float) (landmarkPosition.y * ( scaleY - 0.2 ));
+            landmarkX = viewWidth - landmarkX;
+        }
+
+        // 화면에 그리기 위한 Paint 객체 생성
+        Paint paint = new Paint();
+        paint.setColor(Color.RED);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(10);
+
+        // Canvas에 점 그리기
+        canvas.drawPoint(landmarkX, landmarkY, paint);
+    }
+
+
+
+
+
 
 
     @Override
