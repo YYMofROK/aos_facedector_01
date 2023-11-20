@@ -15,6 +15,7 @@ import android.util.Size;
 import android.view.SurfaceView;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,7 +41,9 @@ import com.google.mlkit.vision.face.FaceLandmark;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -164,6 +167,46 @@ public class MainActivity extends AppCompatActivity {
                 .addOnCompleteListener(result -> imageProxy.close());
     }
 
+/*
+    // 기종별 가중치를 리턴하는 함수
+    public float[] getDevice_scale_add_Rectang(ImageProxy imageProxy) {
+
+        String deviceModel_Name = Build.MODEL;
+
+        Log.d("check:::::", "deviceModel:::::" + String.valueOf(deviceModel_Name));
+
+        Map<String, Map<String, Integer>> deviceModel_Map = new HashMap<>();
+        Map<String, Integer> innerMap = new HashMap<>();
+        innerMap.put("box_X", 1);
+        innerMap.put("box_Y", 1);
+        deviceModel_Map.put("SM-T225N", innerMap);
+
+
+
+
+
+            // 이제 'a' 키로 맵을 참조하고 'aaa' 키로 값을 가져올 수 있습니다.
+        int value = a.get("a").get("aaa");
+
+        /*
+        float[] scale = {1.0f, 1.0f};
+
+        // 이미지 회전 각도 가져오기
+        int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
+
+        // 이미지 회전 각도에 따라 좌표 조정
+        if (rotationDegrees == 0 || rotationDegrees == 180) {
+            // 여기서 원하는 대로 값을 조정하세요
+            scale[0] = 2.0f;
+            scale[1] = 3.0f;
+        }
+
+        return scale;
+
+
+    }
+*/
+
 
     private void drawRectangleOnFace(Face face, ImageProxy imageProxy) {
 
@@ -235,15 +278,16 @@ public class MainActivity extends AppCompatActivity {
 
         }// end if
 
-//        Log.d("check:::::", "previewView.getWidth():::::" + String.valueOf(viewWidth));
-//        Log.d("check:::::", "previewView.getHeight():::::" + String.valueOf(viewHeight));
-//        Log.d("check:::::", "imageProxy.getWidth():::::" + String.valueOf(imageWidth));
-//        Log.d("check:::::", "imageProxy.getHeight():::::" + String.valueOf(imageHeight));
+        Log.d("check:::::", "rotationDegrees:::::" + String.valueOf(rotationDegrees));
+        Log.d("check:::::", "previewView.getWidth():::::" + String.valueOf(viewWidth));
+        Log.d("check:::::", "previewView.getHeight():::::" + String.valueOf(viewHeight));
+        Log.d("check:::::", "imageProxy.getWidth():::::" + String.valueOf(imageWidth));
+        Log.d("check:::::", "imageProxy.getHeight():::::" + String.valueOf(imageHeight));
 //
 //        Log.d("check:::::", "scaleX:::::" + String.valueOf(scaleX));
 //        Log.d("check:::::", "scaleY:::::" + String.valueOf(scaleY));
 
-        Log.d("check:::::", "rotationDegrees:::::" + String.valueOf(rotationDegrees));
+
 //        Log.d("check:::::", "boundingBoxF.left:::::" + String.valueOf(boundingBoxF.left));
 //        Log.d("check:::::", "boundingBoxF.top:::::" + String.valueOf(boundingBoxF.top));
 //        Log.d("check:::::", "boundingBoxF.right:::::" + String.valueOf(boundingBoxF.right));
@@ -321,6 +365,7 @@ public class MainActivity extends AppCompatActivity {
         // 랜드마크 번호 표시
         canvas.drawText(String.valueOf(landmarkIndex), landmarkX, landmarkY, paint);
     }
+
 
 
 
