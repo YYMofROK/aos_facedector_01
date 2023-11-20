@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private Camera camera;
     private ExecutorService cameraExecutor;
     private ImageCapture imageCapture;
+    private double previousAverageRGB = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,17 +143,27 @@ public class MainActivity extends AppCompatActivity {
         faceDetector.process(inputImage)
                 .addOnSuccessListener(faces -> {
 
-                    //Log.d("check:::::", "faces:::::" + String.valueOf(faces));
+                    Log.d("check:::::", "faces:::::" + String.valueOf(faces.toArray().length));
 
-                    for (Face face : faces) {
-                        drawRectangleOnFace(face, imageProxy);
-                    }
+                    if( faces.toArray().length > 0 ) {
+                        for (Face face : faces) {
+                            drawRectangleOnFace(face, imageProxy);
+                        }
+                    }else{
+                        // 이미지뷰에 null 설정하여 화면을 비움
+                        ImageView imageView = findViewById(R.id.imageView);
+                        runOnUiThread(() -> imageView.setImageBitmap(null));
+
+                    }// end if
+
+
                 })
                 .addOnFailureListener(e -> {
                     e.printStackTrace();
                 })
                 .addOnCompleteListener(result -> imageProxy.close());
     }
+
 
     private void drawRectangleOnFace(Face face, ImageProxy imageProxy) {
 
@@ -209,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
 
             // 비율을 곱하여 이미지뷰 상의 좌표로 변환
             boundingBoxF.left *= scaleX;
-            boundingBoxF.top *= (scaleY - 1 );
+            boundingBoxF.top *= (scaleY - 0.8 );
             boundingBoxF.right *= scaleX;
             boundingBoxF.bottom *= ( scaleY - 0.2 );
 
@@ -224,22 +235,19 @@ public class MainActivity extends AppCompatActivity {
 
         }// end if
 
-
-
-
-
-        Log.d("check:::::", "previewView.getWidth():::::" + String.valueOf(viewWidth));
-        Log.d("check:::::", "previewView.getHeight():::::" + String.valueOf(viewHeight));
-        Log.d("check:::::", "imageProxy.getWidth():::::" + String.valueOf(imageWidth));
-        Log.d("check:::::", "imageProxy.getHeight():::::" + String.valueOf(imageHeight));
-        Log.d("check:::::", "scaleX:::::" + String.valueOf(scaleX));
-        Log.d("check:::::", "scaleY:::::" + String.valueOf(scaleY));
+//        Log.d("check:::::", "previewView.getWidth():::::" + String.valueOf(viewWidth));
+//        Log.d("check:::::", "previewView.getHeight():::::" + String.valueOf(viewHeight));
+//        Log.d("check:::::", "imageProxy.getWidth():::::" + String.valueOf(imageWidth));
+//        Log.d("check:::::", "imageProxy.getHeight():::::" + String.valueOf(imageHeight));
+//
+//        Log.d("check:::::", "scaleX:::::" + String.valueOf(scaleX));
+//        Log.d("check:::::", "scaleY:::::" + String.valueOf(scaleY));
 
         Log.d("check:::::", "rotationDegrees:::::" + String.valueOf(rotationDegrees));
-        Log.d("check:::::", "boundingBoxF.left:::::" + String.valueOf(boundingBoxF.left));
-        Log.d("check:::::", "boundingBoxF.top:::::" + String.valueOf(boundingBoxF.top));
-        Log.d("check:::::", "boundingBoxF.right:::::" + String.valueOf(boundingBoxF.right));
-        Log.d("check:::::", "boundingBoxF.bottom:::::" + String.valueOf(boundingBoxF.bottom));
+//        Log.d("check:::::", "boundingBoxF.left:::::" + String.valueOf(boundingBoxF.left));
+//        Log.d("check:::::", "boundingBoxF.top:::::" + String.valueOf(boundingBoxF.top));
+//        Log.d("check:::::", "boundingBoxF.right:::::" + String.valueOf(boundingBoxF.right));
+//        Log.d("check:::::", "boundingBoxF.bottom:::::" + String.valueOf(boundingBoxF.bottom));
 
 
         // 화면에 그리기 위한 Paint 객체 생성
@@ -259,8 +267,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         // 랜드마크에 점 그리기
+        int landmarkIndex = 0;
         for (FaceLandmark landmark : landmarks) {
-            drawPointOnLandmark(landmark.getPosition(), imageProxy, canvas, scaleX, scaleY);
+            drawPointOnLandmark(landmark.getPosition(), landmarkIndex++, imageProxy, canvas, scaleX, scaleY);
         }
 
         // 이미지뷰에 Bitmap 설정하여 화면에 출력
@@ -271,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // 랜드마크 좌표에 점을 그리는 메서드 추가
-    private void drawPointOnLandmark(PointF landmarkPosition, ImageProxy imageProxy, Canvas canvas, float scaleX, float scaleY) {
+    private void drawPointOnLandmark(PointF landmarkPosition, int landmarkIndex,ImageProxy imageProxy, Canvas canvas, float scaleX, float scaleY) {
         // 좌표 변환
         float viewWidth = previewView.getWidth();
         float viewHeight = previewView.getHeight();
@@ -299,12 +308,18 @@ public class MainActivity extends AppCompatActivity {
 
         // 화면에 그리기 위한 Paint 객체 생성
         Paint paint = new Paint();
-        paint.setColor(Color.RED);
+        paint.setColor(Color.GREEN);
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(10);
 
+        float textSize = 20f; // 텍스트 크기 조절
+        paint.setTextSize(textSize);
+
         // Canvas에 점 그리기
-        canvas.drawPoint(landmarkX, landmarkY, paint);
+//        canvas.drawPoint(landmarkX, landmarkY, paint);
+
+        // 랜드마크 번호 표시
+        canvas.drawText(String.valueOf(landmarkIndex), landmarkX, landmarkY, paint);
     }
 
 
